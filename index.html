@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>401(k) Contribution Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0a4d3c;
+            --primary-light: #0d6e52;
+            --accent: #f4a460;
+            --bg: #fafaf8;
+            --card: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #666666;
+            --border: #e0e0d8;
+            --success: #0a4d3c;
+            --highlight: #fff9e6;
+            --warning-bg: #fff3cd;
+            --warning-border: #f4a460;
+            --warning-text: #7a4d00;
+            --info-bg: #e8f4f1;
+            --info-border: #0a4d3c;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            background-image:
+                repeating-linear-gradient(90deg, transparent, transparent 49px, var(--border) 49px, var(--border) 50px),
+                repeating-linear-gradient(0deg, transparent, transparent 49px, var(--border) 49px, var(--border) 50px);
+            background-size: 50px 50px;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; animation: slideUp 0.6s ease-out; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 40px;
+            margin-bottom: 30px;
+            border-radius: 2px;
+            box-shadow: 0 4px 20px rgba(10, 77, 60, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, transparent 30%, rgba(244, 164, 96, 0.1));
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem; font-weight: 700;
+            margin-bottom: 10px; position: relative;
+        }
+
+        .subtitle { font-size: 0.95rem; opacity: 0.9; letter-spacing: 0.5px; position: relative; }
+
+        .tax-year-badge {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 2px;
+            margin-top: 10px;
+            position: relative;
+            letter-spacing: 0.5px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 2px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+
+        .section-title {
+            font-size: 0.85rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.5px;
+            color: var(--primary); margin-bottom: 20px;
+            padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+        }
+
+        .section-note {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            margin-top: -10px;
+            font-style: italic;
+        }
+
+        .input-group { margin-bottom: 20px; }
+
+        label {
+            display: block; font-size: 0.85rem; font-weight: 600;
+            margin-bottom: 8px; color: var(--text); letter-spacing: 0.3px;
+        }
+
+        .input-wrapper { position: relative; }
+
+        .currency-symbol {
+            position: absolute; left: 12px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted); font-weight: 600;
+        }
+
+        .percent-symbol {
+            position: absolute; right: 12px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted); font-weight: 600;
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 12px 12px 30px;
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            background: var(--bg);
+            height: 48px;
+            box-sizing: border-box;
+        }
+
+        select { padding-left: 12px; cursor: pointer; }
+
+        input[type="number"]:focus, select:focus {
+            outline: none; border-color: var(--primary); background: white;
+        }
+
+        input[type="number"].no-currency { padding-left: 12px; }
+        input[type="number"].with-percent { padding-right: 28px; padding-left: 12px; }
+
+        input.input-error { border-color: #c0392b !important; background: #fef0f0 !important; }
+
+        .warning-box {
+            background: var(--warning-bg);
+            border: 1px solid var(--warning-border);
+            border-left: 4px solid var(--warning-border);
+            border-radius: 2px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: var(--warning-text);
+            margin-top: 8px;
+            display: none;
+        }
+
+        .warning-box.visible { display: block; }
+
+        .results {
+            background: linear-gradient(135deg, var(--highlight) 0%, var(--bg) 100%);
+            border: 2px solid var(--accent);
+            border-radius: 2px;
+            padding: 25px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid var(--border);
+        }
+
+        .result-item:last-child { border-bottom: none; }
+
+        .result-label { font-size: 0.9rem; color: var(--text); font-weight: 400; }
+        .result-sublabel { font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        .result-value { font-size: 1.1rem; font-weight: 600; color: var(--primary); }
+
+        .result-value.highlight {
+            font-size: 1.4rem; color: var(--success);
+            background: white; padding: 8px 16px;
+            border-radius: 2px; box-shadow: 0 2px 8px rgba(10, 77, 60, 0.1);
+        }
+
+        .result-value.match-value { color: #1a6e99; }
+        .result-value.savings-value { color: #5a3d8a; }
+        .result-value.warning-value { color: #c0392b; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+        .info-box {
+            background: var(--primary); color: white;
+            padding: 20px; border-radius: 2px;
+            font-size: 0.85rem; line-height: 1.7;
+            margin-top: 20px;
+        }
+
+        .info-box strong { color: var(--accent); }
+
+        .rounding-box {
+            background: var(--info-bg);
+            border: 1px solid var(--info-border);
+            border-left: 4px solid var(--info-border);
+            border-radius: 2px;
+            padding: 14px 18px;
+            font-size: 0.8rem;
+            color: var(--primary);
+            margin-top: 16px;
+            line-height: 1.7;
+        }
+
+        .rounding-box strong { font-weight: 600; }
+
+        .match-alert {
+            background: #e8f4f1;
+            border: 1px solid #0a4d3c;
+            border-left: 4px solid #0a4d3c;
+            border-radius: 2px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            color: var(--primary);
+            margin-top: 16px;
+            display: none;
+        }
+
+        .match-alert.visible { display: block; }
+
+        @media (max-width: 768px) {
+            .grid, .grid-3 { grid-template-columns: 1fr; }
+            h1 { font-size: 2rem; }
+            .container { padding: 10px; }
+            header { padding: 30px 20px; }
+        }
+
+        .calculated-value {
+            background: white; border: 1px solid var(--border);
+            padding: 12px 30px; border-radius: 2px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1rem; color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        .calc-label {
+            font-size: 0.85rem; font-weight: 600;
+            margin-bottom: 8px; color: var(--text); letter-spacing: 0.3px;
+        }
+
+        .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <header>
+        <h1>401(k) Calculator</h1>
+        <div class="subtitle">Calculate your optimal contribution percentages</div>
+        <a class="tax-year-badge" href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits" target="_blank" rel="noopener noreferrer" style="text-decoration:none; cursor:pointer;">2026 IRS LIMITS ↗</a>
+    </header>
+
+    <!-- Input Parameters -->
+    <div class="card">
+        <div class="section-title">Input Parameters</div>
+
+        <div class="grid-3">
+            <div class="input-group">
+                <label for="salary">Total Annual Salary</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="salary" value="100000" step="1000" min="0">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="payPeriods">Total Pay Periods</label>
+                <div class="input-wrapper">
+                    <input type="number" id="payPeriods" class="no-currency" value="26" step="1" min="1" max="365">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="periodsRemaining">Pay Periods Remaining</label>
+                <div class="input-wrapper">
+                    <input type="number" id="periodsRemaining" class="no-currency" value="26" step="1" min="1" max="365">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="input-group">
+                <label for="limit401k">401(k) Elective Deferral Limit</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="limit401k" value="23500" step="500" min="0">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="catchupType">Catch-up Eligibility</label>
+                <select id="catchupType">
+                    <option value="0">Not eligible (under 50)</option>
+                    <option value="8000">Standard catch-up — age 50–59 or 64+ ($8,000)</option>
+                    <option value="11250">Super catch-up — age 60–63 ($11,250 · SECURE 2.0)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="input-group">
+                <label for="preTaxBasic">Pre-tax Basic Contributed (YTD)</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="preTaxBasic" value="0" step="100" min="0">
+                </div>
+                <div class="warning-box" id="preTaxWarning">
+                    ⚠ Exceeds the annual deferral limit.
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="rothCatchup">Roth Catch-up Contributed (YTD)</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="rothCatchup" value="0" step="100" min="0">
+                </div>
+                <div class="warning-box" id="rothWarning">
+                    ⚠ Exceeds the catch-up limit.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employer Match -->
+    <div class="card">
+        <div class="section-title">Employer Match</div>
+        <div class="section-note">Leave at 0% if your employer doesn't offer a match.</div>
+
+        <div class="grid">
+            <div class="input-group">
+                <label for="matchRate">Employer Match Rate</label>
+                <div class="input-wrapper">
+                    <input type="number" id="matchRate" class="with-percent" value="100" step="5" min="0" max="300">
+                    <span class="percent-symbol">%</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="matchCeiling">Match Ceiling (% of salary)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="matchCeiling" class="with-percent" value="4" step="0.5" min="0" max="100">
+                    <span class="percent-symbol">%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="input-group">
+                <label for="autoContrib">Automatic Employer Contribution (% of salary)</label>
+                <div class="input-wrapper">
+                    <input type="number" id="autoContrib" class="with-percent" value="3" step="0.5" min="0" max="100">
+                    <span class="percent-symbol">%</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="taxBracket">Federal Marginal Tax Rate</label>
+                <select id="taxBracket">
+                    <option value="0">— skip estimate —</option>
+                    <option value="0.10">10%</option>
+                    <option value="0.12">12%</option>
+                    <option value="0.22" selected>22%</option>
+                    <option value="0.24">24%</option>
+                    <option value="0.32">32%</option>
+                    <option value="0.35">35%</option>
+                    <option value="0.37">37%</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="result-item">
+                <span class="result-label">
+                    Max Employer Match (conditional)
+                    <span class="result-sublabel">Employer matches up to this amount — only if you contribute enough</span>
+                </span>
+                <span class="result-value match-value" id="maxMatch">$3,000.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">
+                    Automatic Employer Contribution
+                    <span class="result-sublabel">Given regardless of how much you contribute</span>
+                </span>
+                <span class="result-value match-value" id="autoContribAmount">$0.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">
+                    Total Employer Contribution
+                    <span class="result-sublabel">Match + automatic (assuming you contribute enough for full match)</span>
+                </span>
+                <span class="result-value match-value" id="totalEmployerContrib">$3,000.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">
+                    Your Contribution Needed for Full Match
+                    <span class="result-sublabel">You must contribute at least this to capture the full employer match</span>
+                </span>
+                <span class="result-value match-value" id="matchThreshold">$6,000.00</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">
+                    Estimated Tax Savings (Federal)
+                    <span class="result-sublabel">Approximate reduction in federal income tax from pre-tax contributions</span>
+                </span>
+                <span class="result-value savings-value" id="taxSavings">—</span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">
+                    Effective Annual Value of Max Contribution
+                    <span class="result-sublabel">Your contribution + employer match + auto contribution + estimated tax savings</span>
+                </span>
+                <span class="result-value highlight" id="effectiveValue">—</span>
+            </div>
+        </div>
+
+        <div class="match-alert" id="matchAlert"></div>
+    </div>
+
+    <!-- Per-Period Gross Pay -->
+    <div class="card">
+        <div class="section-title">Calculated Values</div>
+        <div class="calc-label">Per-Period Gross Pay (Salary ÷ Pay Periods)</div>
+        <div class="calculated-value" id="firstPaycheck">$3,846.15</div>
+    </div>
+
+    <!-- Contribution Percentages -->
+    <div class="card">
+        <div class="section-title">Contribution Percentages to Enter in Payroll</div>
+
+        <div class="results">
+            <div class="result-item">
+                <span class="result-label">
+                    Match Contribution %
+                    <span class="result-sublabel" id="matchPctSublabel"></span>
+                </span>
+                <span class="result-value highlight" id="matchPct">—</span>
+            </div>
+            <div class="result-item" id="catchupRow" style="display:none">
+                <span class="result-label">
+                    Catch-up Contribution %
+                    <span class="result-sublabel" id="catchupSublabel"></span>
+                </span>
+                <span class="result-value highlight" id="catchupPercent">—</span>
+            </div>
+        </div>
+
+        <div class="rounding-box">
+            <strong>📋 Entering this in Fidelity NetBenefits (or your plan portal)?</strong>
+            Log in → Contributions → Change Contribution Amount. Most plan portals let you enter either a
+            percentage <em>or</em> a flat dollar amount per period — use the dollar amount for precision.
+            If you must use a percentage, round <em>up</em> to the nearest whole number to avoid falling short,
+            then lower it in your final pay period if needed to stay under the annual limit.
+        </div>
+    </div>
+
+    <div class="info-box">
+        <strong>Common Pay Periods:</strong> 26 = bi-weekly &nbsp;·&nbsp; 24 = semi-monthly &nbsp;·&nbsp; 52 = weekly<br>
+        <strong>Note:</strong> The <strong style="color:white">highlighted green values</strong> are the percentages to enter in your payroll system.<br>
+        <strong>Catch-up (SECURE 2.0):</strong> Ages 60–63 qualify for a higher super catch-up limit of $11,250 (vs. $8,000 for all other eligible ages). This took effect January 1, 2025.<br>
+        <strong>Disclaimer:</strong> This is a planning tool, not financial or tax advice. Consult a financial advisor or CPA for your specific situation.
+    </div>
+
+</div>
+
+<script>
+    function fmt$(value) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value);
+    }
+
+    function fmtPct(value) {
+        return (value * 100).toFixed(2) + '%';
+    }
+
+    function calculate() {
+        const salary           = parseFloat(document.getElementById('salary').value)            || 0;
+        const payPeriods       = parseInt(document.getElementById('payPeriods').value,     10) || 1;
+        const periodsRemaining = parseInt(document.getElementById('periodsRemaining').value, 10) || 1;
+        const limit401k        = parseFloat(document.getElementById('limit401k').value)        || 0;
+        const catchupLimit     = parseFloat(document.getElementById('catchupType').value)      || 0;
+        const taxRate          = parseFloat(document.getElementById('taxBracket').value)       || 0;
+        const matchRate        = parseFloat(document.getElementById('matchRate').value)    / 100 || 0;
+        const matchCeiling     = parseFloat(document.getElementById('matchCeiling').value) / 100 || 0;
+        const autoContribRate  = parseFloat(document.getElementById('autoContrib').value)  / 100 || 0;
+
+        // YTD contributions with validation
+        const preTaxBasic  = parseFloat(document.getElementById('preTaxBasic').value)  || 0;
+        const rothCatchup  = parseFloat(document.getElementById('rothCatchup').value)  || 0;
+
+        const preTaxInput   = document.getElementById('preTaxBasic');
+        const preTaxWarning = document.getElementById('preTaxWarning');
+        if (preTaxBasic > limit401k) {
+            preTaxInput.classList.add('input-error');
+            preTaxWarning.classList.add('visible');
+        } else {
+            preTaxInput.classList.remove('input-error');
+            preTaxWarning.classList.remove('visible');
+        }
+
+        const rothInput   = document.getElementById('rothCatchup');
+        const rothWarning = document.getElementById('rothWarning');
+        if (rothCatchup > catchupLimit && catchupLimit > 0) {
+            rothInput.classList.add('input-error');
+            rothWarning.classList.add('visible');
+        } else {
+            rothInput.classList.remove('input-error');
+            rothWarning.classList.remove('visible');
+        }
+
+        // Per-period gross pay
+        const perPeriodGross = salary / payPeriods;
+        document.getElementById('firstPaycheck').textContent = fmt$(perPeriodGross);
+
+        // ── Match contribution % ──
+        // Amount still needed to hit the full match target over remaining pay periods
+        const matchTarget       = salary * matchCeiling;
+        const matchStillNeeded  = Math.max(0, matchTarget - preTaxBasic);
+        const matchPerPeriod    = periodsRemaining > 0 ? matchStillNeeded / periodsRemaining : 0;
+        const matchPct          = perPeriodGross > 0 ? matchPerPeriod / perPeriodGross : 0;
+
+        document.getElementById('matchPct').textContent = fmtPct(matchPct);
+        document.getElementById('matchPctSublabel').textContent = preTaxBasic >= matchTarget
+            ? `✅ Full match already captured — ${fmt$(preTaxBasic)} contributed YTD`
+            : `${fmt$(preTaxBasic)} contributed YTD · ${fmt$(matchStillNeeded)} still needed · ${fmt$(matchPerPeriod)}/period over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''}`;
+
+        // ── Catch-up % ──
+        const catchupRow = document.getElementById('catchupRow');
+        if (catchupLimit === 0) {
+            catchupRow.style.display = 'none';
+            document.getElementById('catchupPercent').textContent = '—';
+        } else {
+            catchupRow.style.display = '';
+            const isSuperCatchup      = catchupLimit === 11250;
+            const catchupStillNeeded  = Math.max(0, catchupLimit - rothCatchup);
+            const catchupPerPeriod    = periodsRemaining > 0 ? catchupStillNeeded / periodsRemaining : 0;
+            const catchupPct          = perPeriodGross > 0 ? catchupPerPeriod / perPeriodGross : 0;
+
+            document.getElementById('catchupPercent').textContent  = fmtPct(catchupPct);
+            document.getElementById('catchupSublabel').textContent = rothCatchup >= catchupLimit
+                ? `✅ Catch-up limit already reached — ${fmt$(rothCatchup)} contributed YTD`
+                : `${fmt$(rothCatchup)} contributed YTD · ${fmt$(catchupStillNeeded)} still needed · ${fmt$(catchupPerPeriod)}/period over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''} · ${isSuperCatchup ? 'SECURE 2.0 ages 60–63' : 'ages 50–59 or 64+'}`;
+        }
+
+        // for employer match / tax calc below
+        const remaining = Math.max(0, limit401k - preTaxBasic);
+
+        // ── Employer Match ──
+        const maxMatchBase        = salary * matchCeiling;
+        const maxMatchAmount      = maxMatchBase * matchRate;
+        const matchThreshold      = maxMatchBase;
+        const autoContribAmount   = salary * autoContribRate;
+        const totalEmployerContrib = maxMatchAmount + autoContribAmount;
+
+        document.getElementById('maxMatch').textContent           = fmt$(maxMatchAmount);
+        document.getElementById('autoContribAmount').textContent  = fmt$(autoContribAmount);
+        document.getElementById('totalEmployerContrib').textContent = fmt$(totalEmployerContrib);
+        document.getElementById('matchThreshold').textContent     = fmt$(matchThreshold);
+
+        // Tax savings
+        const annualContribution = remaining + catchupLimit;
+        if (taxRate > 0) {
+            const savings = annualContribution * taxRate;
+            document.getElementById('taxSavings').textContent = fmt$(savings) + ' est.';
+            const effectiveValue = annualContribution + totalEmployerContrib + savings;
+            document.getElementById('effectiveValue').textContent = fmt$(effectiveValue);
+        } else {
+            document.getElementById('taxSavings').textContent    = '— (select a tax rate above)';
+            document.getElementById('effectiveValue').textContent = fmt$(annualContribution + totalEmployerContrib);
+        }
+
+        // Match alert
+        const matchAlert = document.getElementById('matchAlert');
+        if (matchRate > 0 && matchCeiling > 0) {
+            const yourTotalContrib = remaining + catchupLimit;
+            const autoNote = autoContribAmount > 0 ? ` Your employer also contributes ${fmt$(autoContribAmount)} automatically regardless.` : '';
+            if (yourTotalContrib < matchThreshold) {
+                matchAlert.innerHTML = `⚠ <strong>You may be leaving employer match on the table.</strong> You need to contribute at least ${fmt$(matchThreshold)} (${(matchCeiling * 100).toFixed(1)}% of salary) to receive the full employer match of ${fmt$(maxMatchAmount)}.${autoNote}`;
+                matchAlert.classList.add('visible');
+            } else {
+                matchAlert.innerHTML = `✅ <strong>You're on track for the full employer match</strong> of ${fmt$(maxMatchAmount)}.${autoNote}`;
+                matchAlert.classList.add('visible');
+            }
+        } else if (autoContribAmount > 0) {
+            document.getElementById('matchAlert').innerHTML = `ℹ Your employer contributes ${fmt$(autoContribAmount)} automatically each year regardless of your own contribution.`;
+            document.getElementById('matchAlert').classList.add('visible');
+        } else {
+            matchAlert.classList.remove('visible');
+        }
+    }
+
+    document.querySelectorAll('input[type="number"], select').forEach(el => {
+        el.addEventListener('input', calculate);
+    });
+
+    calculate();
+</script>
+</body>
+</html>
