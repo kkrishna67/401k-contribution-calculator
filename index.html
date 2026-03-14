@@ -438,10 +438,10 @@
         <!-- Group 2: Limits -->
         <div class="grid">
             <div class="input-group">
-                <label for="limit401k">401(k) Elective Deferral Limit</label>
+                <label for="limit401k">2026 Elective Deferral Limit <span style="font-size:0.7rem;font-weight:400;color:var(--text-muted)">(from IRS)</span></label>
                 <div class="input-wrapper">
                     <span class="currency-symbol">$</span>
-                    <input type="number" id="limit401k" value="24500" step="500" min="0">
+                    <input type="number" id="limit401k" value="24500" readonly style="background:#f0f0ea;color:var(--text-muted);cursor:not-allowed;border-color:var(--border);">
                 </div>
             </div>
 
@@ -883,6 +883,13 @@
         document.getElementById('pop-verified').textContent     = data.verified
             ? `Verified ${data.verified}`
             : 'Verified — IRS Notice 2025-67';
+
+        // Sync the deferral limit field from the same IRS data source
+        const deferralNum = parseFloat(data.deferral.replace(/[$,]/g, ''));
+        if (!isNaN(deferralNum)) {
+            document.getElementById('limit401k').value = deferralNum;
+            calculate();
+        }
     }
 
     // Stamp verification timestamp when user clicks through to IRS site and returns
