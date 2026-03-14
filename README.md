@@ -30,7 +30,7 @@ Open `index.html` in any browser. No installation or dependencies required.
 2. Set your **401(k) limits** and **catch-up eligibility**
 3. Enter your **employer match** details
 4. Select your **contribution goal**
-5. Update **YTD contributions** and **pay periods remaining** as the year progresses
+5. Update **YTD contributions** (pre-tax and Roth if you have it)and **pay periods remaining** as the year progresses
 
 The contribution percentages update instantly as you type.
 
