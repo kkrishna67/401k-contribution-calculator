@@ -226,6 +226,18 @@
 
         .rounding-box strong { font-weight: 600; }
 
+        .subsection-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--primary-light);
+            border-top: 1px solid var(--border);
+            padding-top: 18px;
+            margin-top: 4px;
+            margin-bottom: 14px;
+        }
+
         .match-alert {
             background: #e8f4f1;
             border: 1px solid #0a4d3c;
@@ -274,9 +286,10 @@
 
     <!-- Input Parameters -->
     <div class="card">
-        <div class="section-title">Input Parameters</div>
+        <div class="section-title">Salary &amp; Contribution Settings</div>
 
-        <div class="grid-3">
+        <!-- Group 1: Salary & Pay Periods -->
+        <div class="grid">
             <div class="input-group">
                 <label for="salary">Total Annual Salary</label>
                 <div class="input-wrapper">
@@ -293,13 +306,12 @@
             </div>
 
             <div class="input-group">
-                <label for="periodsRemaining">Pay Periods Remaining</label>
-                <div class="input-wrapper">
-                    <input type="number" id="periodsRemaining" class="no-currency" value="26" step="1" min="1" max="365">
-                </div>
+                <div class="calc-label">Per-Period Gross Pay (Salary ÷ Pay Periods)</div>
+                <div class="calculated-value" id="firstPaycheck">$3,846.15</div>
             </div>
         </div>
 
+        <!-- Group 2: Limits -->
         <div class="grid">
             <div class="input-group">
                 <label for="limit401k">401(k) Elective Deferral Limit</label>
@@ -319,7 +331,37 @@
             </div>
         </div>
 
-        <div class="grid">
+        <!-- Group 3: YTD Progress -->
+        <div class="input-group">
+            <label for="contribGoal">Contribution Goal</label>
+            <select id="contribGoal">
+                <option value="match">Capture Full Match — contribute just enough to get the full employer match</option>
+                <option value="max">Maximize Contributions — contribute the full elective deferral limit</option>
+                <option value="custom">Custom Target — specify your own contribution amount</option>
+            </select>
+        </div>
+
+        <div class="input-group" id="customAmountGroup" style="display:none">
+            <label for="customAmount">Custom Target Amount</label>
+            <div class="input-wrapper">
+                <span class="currency-symbol">$</span>
+                <input type="number" id="customAmount" value="0" step="100" min="0">
+            </div>
+            <div class="warning-box" id="customAmountWarning">
+                ⚠ Exceeds the annual deferral limit — reduce to avoid an over-contribution.
+            </div>
+        </div>
+
+        <div class="subsection-title">YTD Progress — used to calculate your remaining contribution %</div>
+
+        <div class="grid-3">
+            <div class="input-group">
+                <label for="periodsRemaining">Pay Periods Remaining</label>
+                <div class="input-wrapper">
+                    <input type="number" id="periodsRemaining" class="no-currency" value="26" step="1" min="1" max="365">
+                </div>
+            </div>
+
             <div class="input-group">
                 <label for="preTaxBasic">Pre-tax Basic Contributed (YTD)</label>
                 <div class="input-wrapper">
@@ -342,6 +384,7 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Employer Match -->
@@ -437,13 +480,6 @@
         <div class="match-alert" id="matchAlert"></div>
     </div>
 
-    <!-- Per-Period Gross Pay -->
-    <div class="card">
-        <div class="section-title">Calculated Values</div>
-        <div class="calc-label">Per-Period Gross Pay (Salary ÷ Pay Periods)</div>
-        <div class="calculated-value" id="firstPaycheck">$3,846.15</div>
-    </div>
-
     <!-- Contribution Percentages -->
     <div class="card">
         <div class="section-title">Contribution Percentages to Enter in Payroll</div>
@@ -456,12 +492,20 @@
                 </span>
                 <span class="result-value highlight" id="matchPct">—</span>
             </div>
+            <div class="result-item">
+                <span class="result-label">Match Contribution per Pay Period</span>
+                <span class="result-value" id="matchPerPeriodAmt">—</span>
+            </div>
             <div class="result-item" id="catchupRow" style="display:none">
                 <span class="result-label">
                     Catch-up Contribution %
                     <span class="result-sublabel" id="catchupSublabel"></span>
                 </span>
                 <span class="result-value highlight" id="catchupPercent">—</span>
+            </div>
+            <div class="result-item" id="catchupPerPeriodRow" style="display:none">
+                <span class="result-label">Catch-up Contribution per Pay Period</span>
+                <span class="result-value" id="catchupPerPeriodAmt">—</span>
             </div>
         </div>
 
@@ -476,9 +520,8 @@
 
     <div class="info-box">
         <strong>Common Pay Periods:</strong> 26 = bi-weekly &nbsp;·&nbsp; 24 = semi-monthly &nbsp;·&nbsp; 52 = weekly<br>
-        <strong>Note:</strong> The <strong style="color:white">highlighted green values</strong> are the percentages to enter in your payroll system.<br>
-        <strong>Catch-up (SECURE 2.0):</strong> Ages 60–63 qualify for a higher super catch-up limit of $11,250 (vs. $8,000 for all other eligible ages). This took effect January 1, 2025.<br>
-        <strong>Disclaimer:</strong> This is a planning tool, not financial or tax advice. Consult a financial advisor or CPA for your specific situation.
+        <strong>Note:</strong> The values in <strong style="color:white">CONTRIBUTION PERCENTAGES TO ENTER IN PAYROLL</strong> are the percentages to enter in your Fidelity NetBenefits (or your plan) portal.<br>
+<strong>Disclaimer:</strong> This is a planning tool, not financial or tax advice. Consult a financial advisor or CPA for your specific situation.
     </div>
 
 </div>
@@ -531,34 +574,67 @@
         const perPeriodGross = salary / payPeriods;
         document.getElementById('firstPaycheck').textContent = fmt$(perPeriodGross);
 
+        // ── Contribution goal ──
+        const contribGoal  = document.getElementById('contribGoal').value;
+        const customInput  = document.getElementById('customAmount');
+        const customGroup  = document.getElementById('customAmountGroup');
+        const customWarn   = document.getElementById('customAmountWarning');
+        const rawCustom    = parseFloat(customInput?.value) || 0;
+
+        customGroup.style.display = contribGoal === 'custom' ? '' : 'none';
+
+        let contribTarget;
+        if (contribGoal === 'match') {
+            contribTarget = salary * matchCeiling;
+        } else if (contribGoal === 'max') {
+            contribTarget = limit401k;
+        } else {
+            contribTarget = Math.min(rawCustom, limit401k);
+            if (rawCustom > limit401k) {
+                customInput.classList.add('input-error');
+                customWarn.classList.add('visible');
+            } else {
+                customInput.classList.remove('input-error');
+                customWarn.classList.remove('visible');
+            }
+        }
+
+        const goalLabel = contribGoal === 'match' ? 'Capture Full Match'
+                        : contribGoal === 'max'   ? 'Maximize Contributions'
+                        :                           'Custom Target';
+
         // ── Match contribution % ──
-        // Amount still needed to hit the full match target over remaining pay periods
-        const matchTarget       = salary * matchCeiling;
-        const matchStillNeeded  = Math.max(0, matchTarget - preTaxBasic);
+        const matchStillNeeded  = Math.max(0, contribTarget - preTaxBasic);
         const matchPerPeriod    = periodsRemaining > 0 ? matchStillNeeded / periodsRemaining : 0;
         const matchPct          = perPeriodGross > 0 ? matchPerPeriod / perPeriodGross : 0;
 
         document.getElementById('matchPct').textContent = fmtPct(matchPct);
-        document.getElementById('matchPctSublabel').textContent = preTaxBasic >= matchTarget
-            ? `✅ Full match already captured — ${fmt$(preTaxBasic)} contributed YTD`
-            : `${fmt$(preTaxBasic)} contributed YTD · ${fmt$(matchStillNeeded)} still needed · ${fmt$(matchPerPeriod)}/period over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''}`;
+        document.getElementById('matchPerPeriodAmt').textContent = fmt$(matchPerPeriod);
+        document.getElementById('matchPctSublabel').textContent = preTaxBasic >= contribTarget
+            ? `✅ ${goalLabel} already reached — ${fmt$(preTaxBasic)} contributed YTD`
+            : `Goal: ${fmt$(contribTarget)} · ${fmt$(preTaxBasic)} contributed YTD · ${fmt$(matchStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''}`;
 
         // ── Catch-up % ──
-        const catchupRow = document.getElementById('catchupRow');
+        const catchupRow        = document.getElementById('catchupRow');
+        const catchupPerPeriodRow = document.getElementById('catchupPerPeriodRow');
         if (catchupLimit === 0) {
             catchupRow.style.display = 'none';
+            catchupPerPeriodRow.style.display = 'none';
             document.getElementById('catchupPercent').textContent = '—';
+            document.getElementById('catchupPerPeriodAmt').textContent = '—';
         } else {
             catchupRow.style.display = '';
+            catchupPerPeriodRow.style.display = '';
             const isSuperCatchup      = catchupLimit === 11250;
             const catchupStillNeeded  = Math.max(0, catchupLimit - rothCatchup);
             const catchupPerPeriod    = periodsRemaining > 0 ? catchupStillNeeded / periodsRemaining : 0;
             const catchupPct          = perPeriodGross > 0 ? catchupPerPeriod / perPeriodGross : 0;
 
-            document.getElementById('catchupPercent').textContent  = fmtPct(catchupPct);
-            document.getElementById('catchupSublabel').textContent = rothCatchup >= catchupLimit
+            document.getElementById('catchupPercent').textContent     = fmtPct(catchupPct);
+            document.getElementById('catchupPerPeriodAmt').textContent = fmt$(catchupPerPeriod);
+            document.getElementById('catchupSublabel').textContent    = rothCatchup >= catchupLimit
                 ? `✅ Catch-up limit already reached — ${fmt$(rothCatchup)} contributed YTD`
-                : `${fmt$(rothCatchup)} contributed YTD · ${fmt$(catchupStillNeeded)} still needed · ${fmt$(catchupPerPeriod)}/period over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''} · ${isSuperCatchup ? 'SECURE 2.0 ages 60–63' : 'ages 50–59 or 64+'}`;
+                : `${fmt$(rothCatchup)} contributed YTD · ${fmt$(catchupStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''} · ${isSuperCatchup ? 'SECURE 2.0 ages 60–63' : 'ages 50–59 or 64+'}`;
         }
 
         // for employer match / tax calc below
@@ -608,10 +684,37 @@
         }
     }
 
+    const PERSIST_IDS = [
+        'salary','payPeriods','periodsRemaining','limit401k','catchupType',
+        'preTaxBasic','rothCatchup','contribGoal','customAmount',
+        'matchRate','matchCeiling','autoContrib','taxBracket'
+    ];
+
+    function saveValues() {
+        const saved = {};
+        PERSIST_IDS.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) saved[id] = el.value;
+        });
+        localStorage.setItem('401k_calc', JSON.stringify(saved));
+    }
+
+    function restoreValues() {
+        try {
+            const saved = JSON.parse(localStorage.getItem('401k_calc'));
+            if (!saved) return;
+            PERSIST_IDS.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && saved[id] !== undefined) el.value = saved[id];
+            });
+        } catch(e) {}
+    }
+
     document.querySelectorAll('input[type="number"], select').forEach(el => {
-        el.addEventListener('input', calculate);
+        el.addEventListener('input', () => { calculate(); saveValues(); });
     });
 
+    restoreValues();
     calculate();
 </script>
 </body>
