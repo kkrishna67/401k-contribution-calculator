@@ -53,7 +53,6 @@
             border-radius: 2px;
             box-shadow: 0 4px 20px rgba(10, 77, 60, 0.15);
             position: relative;
-            overflow: hidden;
         }
 
         header::before {
@@ -71,6 +70,12 @@
 
         .subtitle { font-size: 0.95rem; opacity: 0.9; letter-spacing: 0.5px; position: relative; }
 
+        .badge-wrapper {
+            display: inline-block;
+            position: relative;
+            margin-top: 10px;
+        }
+
         .tax-year-badge {
             display: inline-block;
             background: var(--accent);
@@ -79,10 +84,79 @@
             font-weight: 600;
             padding: 3px 10px;
             border-radius: 2px;
-            margin-top: 10px;
             position: relative;
             letter-spacing: 0.5px;
         }
+
+        .irs-popover {
+            display: none;
+            position: fixed;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 4px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            padding: 16px 20px;
+            min-width: 320px;
+            z-index: 9999;
+            text-align: left;
+            color: var(--text);
+        }
+
+        .irs-popover::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 7px solid var(--accent);
+        }
+
+        .irs-popover.visible { display: block; }
+
+        .irs-popover-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--primary);
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .irs-popover-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 5px 0;
+            font-size: 0.8rem;
+            border-bottom: 1px solid #f0f0ea;
+        }
+
+        .irs-popover-row:last-of-type { border-bottom: none; }
+
+        .irs-popover-label { color: var(--text-muted); }
+
+        .irs-popover-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .irs-popover-footer {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .irs-popover-footer a { color: var(--primary-light); text-decoration: underline; }
 
         .card {
             background: var(--card);
@@ -155,6 +229,13 @@
         input[type="number"].with-percent { padding-right: 28px; padding-left: 12px; }
 
         input.input-error { border-color: #c0392b !important; background: #fef0f0 !important; }
+
+        input.enter-value::placeholder {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+        }
 
         .warning-box {
             background: var(--warning-bg);
@@ -281,7 +362,40 @@
     <header>
         <h1>401(k) Calculator</h1>
         <div class="subtitle">Calculate your optimal contribution percentages</div>
-        <a class="tax-year-badge" href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits" target="_blank" rel="noopener noreferrer" style="text-decoration:none; cursor:pointer;">2026 IRS LIMITS ↗</a>
+        <div class="badge-wrapper" id="badgeWrapper">
+            <a class="tax-year-badge" id="irsBadge" href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits" target="_blank" rel="noopener noreferrer" style="text-decoration:none; cursor:pointer;">2026 IRS LIMITS ↗</a>
+            <div class="irs-popover" id="irsPopover">
+                <div class="irs-popover-title">2026 IRS 401(k) Contribution Limits</div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Elective Deferral Limit</span>
+                    <span class="irs-popover-value" id="pop-deferral">$24,500</span>
+                </div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Standard Catch-up (age 50–59, 64+)</span>
+                    <span class="irs-popover-value" id="pop-catchup">$8,000</span>
+                </div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Super Catch-up (age 60–63 · SECURE 2.0)</span>
+                    <span class="irs-popover-value" id="pop-supercatchup">$11,250</span>
+                </div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Combined Employee + Employer Limit</span>
+                    <span class="irs-popover-value" id="pop-combined">$72,000</span>
+                </div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Max with Standard Catch-up</span>
+                    <span class="irs-popover-value" id="pop-maxstandard">$32,500</span>
+                </div>
+                <div class="irs-popover-row">
+                    <span class="irs-popover-label">Max with Super Catch-up</span>
+                    <span class="irs-popover-value" id="pop-maxsuper">$35,750</span>
+                </div>
+                <div class="irs-popover-footer">
+                    <span id="pop-verified">Verified —</span>
+                    <a href="https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-401k-and-profit-sharing-plan-contribution-limits" target="_blank" rel="noopener noreferrer">View on IRS.gov ↗</a>
+                </div>
+            </div>
+        </div>
     </header>
 
     <!-- Input Parameters -->
@@ -298,6 +412,16 @@
                 </div>
             </div>
 
+            <div class="input-group">
+                <label for="annualBonus">Annual Bonus (if any)</label>
+                <div class="input-wrapper">
+                    <span class="currency-symbol">$</span>
+                    <input type="number" id="annualBonus" value="0" step="1000" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
             <div class="input-group">
                 <label for="payPeriods">Total Pay Periods</label>
                 <div class="input-wrapper">
@@ -317,7 +441,7 @@
                 <label for="limit401k">401(k) Elective Deferral Limit</label>
                 <div class="input-wrapper">
                     <span class="currency-symbol">$</span>
-                    <input type="number" id="limit401k" value="23500" step="500" min="0">
+                    <input type="number" id="limit401k" value="24500" step="500" min="0">
                 </div>
             </div>
 
@@ -358,7 +482,7 @@
             <div class="input-group">
                 <label for="periodsRemaining">Pay Periods Remaining</label>
                 <div class="input-wrapper">
-                    <input type="number" id="periodsRemaining" class="no-currency" value="26" step="1" min="1" max="365">
+                    <input type="number" id="periodsRemaining" class="no-currency enter-value" value="" placeholder="ENTER VALUE" step="1" min="1" max="365">
                 </div>
             </div>
 
@@ -366,7 +490,7 @@
                 <label for="preTaxBasic">Pre-tax Basic Contributed (YTD)</label>
                 <div class="input-wrapper">
                     <span class="currency-symbol">$</span>
-                    <input type="number" id="preTaxBasic" value="0" step="100" min="0">
+                    <input type="number" id="preTaxBasic" class="enter-value" value="" placeholder="ENTER VALUE" step="100" min="0">
                 </div>
                 <div class="warning-box" id="preTaxWarning">
                     ⚠ Exceeds the annual deferral limit.
@@ -377,7 +501,7 @@
                 <label for="rothCatchup">Roth Catch-up Contributed (YTD)</label>
                 <div class="input-wrapper">
                     <span class="currency-symbol">$</span>
-                    <input type="number" id="rothCatchup" value="0" step="100" min="0">
+                    <input type="number" id="rothCatchup" class="enter-value" value="" placeholder="ENTER VALUE" step="100" min="0">
                 </div>
                 <div class="warning-box" id="rothWarning">
                     ⚠ Exceeds the catch-up limit.
@@ -417,40 +541,27 @@
                     <span class="percent-symbol">%</span>
                 </div>
             </div>
-            <div class="input-group">
-                <label for="taxBracket">Federal Marginal Tax Rate</label>
-                <select id="taxBracket">
-                    <option value="0">— skip estimate —</option>
-                    <option value="0.10">10%</option>
-                    <option value="0.12">12%</option>
-                    <option value="0.22" selected>22%</option>
-                    <option value="0.24">24%</option>
-                    <option value="0.32">32%</option>
-                    <option value="0.35">35%</option>
-                    <option value="0.37">37%</option>
-                </select>
-            </div>
         </div>
 
         <div class="results">
             <div class="result-item">
                 <span class="result-label">
                     Max Employer Match (conditional)
-                    <span class="result-sublabel">Employer matches up to this amount — only if you contribute enough</span>
+                    <span class="result-sublabel" id="maxMatchSublabel">Employer matches up to this amount — only if you contribute enough</span>
                 </span>
                 <span class="result-value match-value" id="maxMatch">$3,000.00</span>
             </div>
             <div class="result-item">
                 <span class="result-label">
                     Automatic Employer Contribution
-                    <span class="result-sublabel">Given regardless of how much you contribute</span>
+                    <span class="result-sublabel" id="autoContribSublabel">Given regardless of how much you contribute</span>
                 </span>
                 <span class="result-value match-value" id="autoContribAmount">$0.00</span>
             </div>
             <div class="result-item">
                 <span class="result-label">
                     Total Employer Contribution
-                    <span class="result-sublabel">Match + automatic (assuming you contribute enough for full match)</span>
+                    <span class="result-sublabel" id="totalEmployerSublabel">Match + automatic (assuming you contribute enough for full match)</span>
                 </span>
                 <span class="result-value match-value" id="totalEmployerContrib">$3,000.00</span>
             </div>
@@ -463,15 +574,15 @@
             </div>
             <div class="result-item">
                 <span class="result-label">
-                    Estimated Tax Savings (Federal)
-                    <span class="result-sublabel">Approximate reduction in federal income tax from pre-tax contributions</span>
+                    Your Annual Contribution Target
+                    <span class="result-sublabel" id="contribTargetSublabel"></span>
                 </span>
-                <span class="result-value savings-value" id="taxSavings">—</span>
+                <span class="result-value match-value" id="contribTargetDisplay">—</span>
             </div>
             <div class="result-item">
                 <span class="result-label">
                     Effective Annual Value of Max Contribution
-                    <span class="result-sublabel">Your contribution + employer match + auto contribution + estimated tax savings</span>
+                    <span class="result-sublabel">Your contribution target + total employer contribution</span>
                 </span>
                 <span class="result-value highlight" id="effectiveValue">—</span>
             </div>
@@ -541,7 +652,6 @@
         const periodsRemaining = parseInt(document.getElementById('periodsRemaining').value, 10) || 1;
         const limit401k        = parseFloat(document.getElementById('limit401k').value)        || 0;
         const catchupLimit     = parseFloat(document.getElementById('catchupType').value)      || 0;
-        const taxRate          = parseFloat(document.getElementById('taxBracket').value)       || 0;
         const matchRate        = parseFloat(document.getElementById('matchRate').value)    / 100 || 0;
         const matchCeiling     = parseFloat(document.getElementById('matchCeiling').value) / 100 || 0;
         const autoContribRate  = parseFloat(document.getElementById('autoContrib').value)  / 100 || 0;
@@ -638,31 +748,42 @@
         }
 
         // for employer match / tax calc below
-        const remaining = Math.max(0, limit401k - preTaxBasic);
+        const remaining   = Math.max(0, limit401k - preTaxBasic);
+        const annualBonus = parseFloat(document.getElementById('annualBonus').value) || 0;
+        const totalComp   = salary + annualBonus; // compensation base for employer match only
 
         // ── Employer Match ──
-        const maxMatchBase        = salary * matchCeiling;
-        const maxMatchAmount      = maxMatchBase * matchRate;
-        const matchThreshold      = maxMatchBase;
-        const autoContribAmount   = salary * autoContribRate;
+        const maxMatchBase         = totalComp * matchCeiling;
+        const maxMatchAmount       = maxMatchBase * matchRate;
+        const matchThreshold       = maxMatchBase;
+        const autoContribAmount    = totalComp * autoContribRate;
         const totalEmployerContrib = maxMatchAmount + autoContribAmount;
 
-        document.getElementById('maxMatch').textContent           = fmt$(maxMatchAmount);
-        document.getElementById('autoContribAmount').textContent  = fmt$(autoContribAmount);
+        document.getElementById('maxMatch').textContent            = fmt$(maxMatchAmount);
+        document.getElementById('autoContribAmount').textContent   = fmt$(autoContribAmount);
         document.getElementById('totalEmployerContrib').textContent = fmt$(totalEmployerContrib);
-        document.getElementById('matchThreshold').textContent     = fmt$(matchThreshold);
+        document.getElementById('matchThreshold').textContent      = fmt$(matchThreshold);
 
-        // Tax savings
-        const annualContribution = remaining + catchupLimit;
-        if (taxRate > 0) {
-            const savings = annualContribution * taxRate;
-            document.getElementById('taxSavings').textContent = fmt$(savings) + ' est.';
-            const effectiveValue = annualContribution + totalEmployerContrib + savings;
-            document.getElementById('effectiveValue').textContent = fmt$(effectiveValue);
-        } else {
-            document.getElementById('taxSavings').textContent    = '— (select a tax rate above)';
-            document.getElementById('effectiveValue').textContent = fmt$(annualContribution + totalEmployerContrib);
-        }
+        const bonusNote = annualBonus > 0 ? ` (salary + ${fmt$(annualBonus)} bonus)` : '';
+        document.getElementById('maxMatchSublabel').textContent =
+            `${(matchRate * 100).toFixed(0)}% match on up to ${(matchCeiling * 100).toFixed(0)}% of your compensation${bonusNote} — only if you contribute enough`;
+        document.getElementById('autoContribSublabel').textContent =
+            autoContribRate > 0
+                ? `${(autoContribRate * 100).toFixed(0)}% of your compensation${bonusNote} — given regardless of your own contributions`
+                : 'No automatic contribution configured';
+        document.getElementById('totalEmployerSublabel').textContent =
+            `${(matchRate * 100).toFixed(0)}% match + ${(autoContribRate * 100).toFixed(0)}% automatic — based on ${fmt$(totalComp)} total compensation${bonusNote}`;
+
+        // ── Contribution target display (goal + catch-up) ──
+        const totalContribTarget = contribTarget + catchupLimit;
+        const catchupNote        = catchupLimit > 0 ? ` + ${fmt$(catchupLimit)} catch-up` : '';
+        const goalLabels         = { match: 'Capture Full Match', max: 'Maximize Contributions', custom: 'Custom Target' };
+        document.getElementById('contribTargetDisplay').textContent = fmt$(totalContribTarget);
+        document.getElementById('contribTargetSublabel').textContent =
+            `${goalLabels[contribGoal]}: ${fmt$(contribTarget)} deferral${catchupNote}`;
+
+        // ── Effective value (contribution target + employer) ──
+        document.getElementById('effectiveValue').textContent = fmt$(totalContribTarget + totalEmployerContrib);
 
         // Match alert
         const matchAlert = document.getElementById('matchAlert');
@@ -685,16 +806,22 @@
     }
 
     const PERSIST_IDS = [
-        'payPeriods','periodsRemaining','limit401k','catchupType',
+        'payPeriods','periodsRemaining','catchupType',
         'preTaxBasic','rothCatchup','contribGoal','customAmount',
-        'matchRate','matchCeiling','autoContrib','taxBracket'
+        'matchRate','matchCeiling','autoContrib'
     ];
+
+    // Fields that only persist if the user has explicitly entered a value
+    const ENTER_VALUE_IDS = ['periodsRemaining','preTaxBasic','rothCatchup'];
 
     function saveValues() {
         const saved = {};
         PERSIST_IDS.forEach(id => {
             const el = document.getElementById(id);
-            if (el) saved[id] = el.value;
+            if (!el) return;
+            // Only save enter-value fields if user has typed something
+            if (ENTER_VALUE_IDS.includes(id) && el.value === '') return;
+            saved[id] = el.value;
         });
         localStorage.setItem('401k_calc', JSON.stringify(saved));
     }
@@ -705,7 +832,13 @@
             if (!saved) return;
             PERSIST_IDS.forEach(id => {
                 const el = document.getElementById(id);
-                if (el && saved[id] !== undefined) el.value = saved[id];
+                if (!el) return;
+                // Only restore enter-value fields if a real value was saved
+                if (ENTER_VALUE_IDS.includes(id)) {
+                    if (saved[id] !== undefined && saved[id] !== '') el.value = saved[id];
+                } else {
+                    if (saved[id] !== undefined) el.value = saved[id];
+                }
             });
         } catch(e) {}
     }
@@ -716,6 +849,88 @@
 
     restoreValues();
     calculate();
+
+    // ── IRS Limits Popover ──
+    const IRS_LIMITS_KEY = '401k_irs_limits';
+    const IRS_LIMITS_DEFAULT = {
+        deferral:    '$24,500',
+        catchup:     '$8,000',
+        supercatchup:'$11,250',
+        combined:    '$72,000',
+        maxstandard: '$32,500',
+        maxsuper:    '$35,750',
+        verified:    null
+    };
+
+    function loadIrsLimits() {
+        try {
+            const stored = JSON.parse(localStorage.getItem(IRS_LIMITS_KEY));
+            return stored || IRS_LIMITS_DEFAULT;
+        } catch(e) { return IRS_LIMITS_DEFAULT; }
+    }
+
+    function saveIrsLimits(data) {
+        localStorage.setItem(IRS_LIMITS_KEY, JSON.stringify(data));
+    }
+
+    function renderIrsPopover(data) {
+        document.getElementById('pop-deferral').textContent     = data.deferral;
+        document.getElementById('pop-catchup').textContent      = data.catchup;
+        document.getElementById('pop-supercatchup').textContent = data.supercatchup;
+        document.getElementById('pop-combined').textContent     = data.combined;
+        document.getElementById('pop-maxstandard').textContent  = data.maxstandard;
+        document.getElementById('pop-maxsuper').textContent     = data.maxsuper;
+        document.getElementById('pop-verified').textContent     = data.verified
+            ? `Verified ${data.verified}`
+            : 'Verified — IRS Notice 2025-67';
+    }
+
+    // Stamp verification timestamp when user clicks through to IRS site and returns
+    function stampVerified() {
+        const data = loadIrsLimits();
+        data.verified = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        saveIrsLimits(data);
+        renderIrsPopover(data);
+    }
+
+    document.getElementById('irsBadge').addEventListener('click', () => {
+        // When they click through to IRS.gov, stamp verified when they return
+        window.addEventListener('focus', function onFocus() {
+            stampVerified();
+            window.removeEventListener('focus', onFocus);
+        }, { once: true });
+    });
+
+    // Toggle popover on badge click (intercept before navigation for popover, let link open normally)
+    const badgeWrapper = document.getElementById('badgeWrapper');
+    const irsPopover   = document.getElementById('irsPopover');
+
+    function positionPopover() {
+        const rect = badgeWrapper.getBoundingClientRect();
+        const popW = 320;
+        let left = rect.left + rect.width / 2 - popW / 2;
+        // keep within viewport
+        left = Math.max(8, Math.min(left, window.innerWidth - popW - 8));
+        irsPopover.style.top  = (rect.bottom + 10) + 'px';
+        irsPopover.style.left = left + 'px';
+        irsPopover.style.width = popW + 'px';
+    }
+
+    badgeWrapper.addEventListener('mouseenter', () => {
+        positionPopover();
+        irsPopover.classList.add('visible');
+    });
+    badgeWrapper.addEventListener('mouseleave', (e) => {
+        if (!irsPopover.contains(e.relatedTarget)) irsPopover.classList.remove('visible');
+    });
+    irsPopover.addEventListener('mouseleave', (e) => {
+        if (!badgeWrapper.contains(e.relatedTarget)) irsPopover.classList.remove('visible');
+    });
+
+    // Init
+    const irsData = loadIrsLimits();
+    if (!irsData.verified) saveIrsLimits(irsData);
+    renderIrsPopover(irsData);
 </script>
 </body>
 </html>
