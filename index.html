@@ -354,6 +354,103 @@
         }
 
         .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+        /* ── Print button ── */
+        .print-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .print-btn:hover { background: var(--primary-light); }
+
+        /* ── Print-only summary (hidden on screen) ── */
+        .print-only { display: none; }
+
+        @page {
+            size: letter portrait;
+            margin: 0.5in;
+        }
+
+        @media print {
+            /* Hide everything except the print summary */
+            body { background: white; padding: 0; background-image: none; }
+            .container > *:not(#printSummary) { display: none !important; }
+            .print-only { display: block !important; }
+
+            #printSummary {
+                font-family: 'IBM Plex Mono', monospace;
+                color: #000;
+                padding: 0;
+                font-size: 8pt;
+                /* Scale down uniformly to guarantee single-page fit */
+                transform-origin: top left;
+                transform: scale(0.9);
+                width: 111%;   /* compensate so content doesn't reflow narrow */
+            }
+
+            .ps-title {
+                font-family: 'Playfair Display', serif;
+                font-size: 14pt;
+                font-weight: 700;
+                margin-bottom: 2px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 4px;
+            }
+
+            .ps-date {
+                font-size: 7pt;
+                color: #555;
+                margin-bottom: 8px;
+            }
+
+            .ps-section {
+                font-size: 7pt;
+                font-weight: 700;
+                letter-spacing: 1px;
+                color: #0a4d3c;
+                border-bottom: 1px solid #ccc;
+                margin: 8px 0 3px;
+                padding-bottom: 1px;
+            }
+
+            .ps-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 8pt;
+            }
+
+            .ps-table td {
+                padding: 2px 4px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .ps-table td:first-child {
+                color: #444;
+                width: 60%;
+            }
+
+            .ps-table td:last-child {
+                font-weight: 600;
+                text-align: right;
+            }
+
+            .ps-footer {
+                margin-top: 10px;
+                font-size: 7pt;
+                color: #777;
+                border-top: 1px solid #ccc;
+                padding-top: 5px;
+                font-style: italic;
+            }
+        }
     </style>
 </head>
 <body>
@@ -627,6 +724,56 @@
             If you must use a percentage, round <em>up</em> to the nearest whole number to avoid falling short,
             then lower it in your final pay period if needed to stay under the annual limit.
         </div>
+
+        <div style="text-align:right; margin-top:16px;">
+            <button class="print-btn" onclick="printRecord()">🖨 Print for your records</button>
+        </div>
+    </div>
+
+    <!-- Print-only summary (hidden on screen) -->
+    <div id="printSummary" class="print-only">
+        <div class="ps-title" id="psPrintTitle">401(k) Contribution Calculator — Summary</div>
+        <div class="ps-date" id="psPrintDate"></div>
+
+        <div class="ps-section">INPUTS</div>
+        <table class="ps-table">
+            <tr><td>Annual Salary</td><td id="psSalary"></td></tr>
+            <tr><td>Annual Bonus</td><td id="psBonus"></td></tr>
+            <tr><td>Pay Periods (total)</td><td id="psPayPeriods"></td></tr>
+            <tr><td>Pay Periods Remaining</td><td id="psPeriodsRemaining"></td></tr>
+            <tr><td>Per-Period Gross Pay</td><td id="psPerPeriodGross"></td></tr>
+            <tr><td>401(k) Elective Deferral Limit</td><td id="psLimit401k"></td></tr>
+            <tr><td>Catch-up Type</td><td id="psCatchupType"></td></tr>
+            <tr><td>Pre-tax Basic Contributed (YTD)</td><td id="psPreTaxBasic"></td></tr>
+            <tr><td>Roth Catch-up Contributed (YTD)</td><td id="psRothCatchup"></td></tr>
+            <tr><td>Contribution Goal</td><td id="psGoal"></td></tr>
+        </table>
+
+        <div class="ps-section">EMPLOYER MATCH SETTINGS</div>
+        <table class="ps-table">
+            <tr><td>Match Rate</td><td id="psMatchRate"></td></tr>
+            <tr><td>Match Ceiling</td><td id="psMatchCeiling"></td></tr>
+            <tr><td>Automatic Contribution</td><td id="psAutoContrib"></td></tr>
+        </table>
+
+        <div class="ps-section">EMPLOYER MATCH RESULTS</div>
+        <table class="ps-table">
+            <tr><td>Max Employer Match</td><td id="psMaxMatch"></td></tr>
+            <tr><td>Automatic Contribution Amount</td><td id="psAutoContribAmt"></td></tr>
+            <tr><td>Total Employer Contribution</td><td id="psTotalEmployer"></td></tr>
+        </table>
+
+        <div class="ps-section">CONTRIBUTION PERCENTAGES TO ENTER IN PAYROLL</div>
+        <table class="ps-table">
+            <tr><td>Match Contribution % (rounded up)</td><td id="psMatchPct"></td></tr>
+            <tr><td>Match Contribution % (exact)</td><td id="psMatchPctExact"></td></tr>
+            <tr><td>Match Contribution per Pay Period</td><td id="psMatchPerPeriod"></td></tr>
+            <tr id="psCatchupRow"><td>Catch-up Contribution % (rounded up)</td><td id="psCatchupPct"></td></tr>
+            <tr id="psCatchupExactRow"><td>Catch-up Contribution % (exact)</td><td id="psCatchupPctExact"></td></tr>
+            <tr id="psCatchupPerPeriodRow"><td>Catch-up Contribution per Pay Period</td><td id="psCatchupPerPeriod"></td></tr>
+        </table>
+
+        <div class="ps-footer">This is a planning tool, not financial or tax advice. Consult a financial advisor or CPA for your specific situation.</div>
     </div>
 
     <div class="info-box">
@@ -718,11 +865,15 @@
         const matchPerPeriod    = periodsRemaining > 0 ? matchStillNeeded / periodsRemaining : 0;
         const matchPct          = perPeriodGross > 0 ? matchPerPeriod / perPeriodGross : 0;
 
-        document.getElementById('matchPct').textContent = fmtPct(matchPct);
-        document.getElementById('matchPerPeriodAmt').textContent = fmt$(matchPerPeriod);
+        // Rounded-up whole-number % and its corresponding per-period dollar amount
+        const matchPctRounded       = Math.ceil(matchPct * 100);            // e.g. 5 (whole %)
+        const matchPerPeriodRounded = perPeriodGross * matchPctRounded / 100;
+
+        document.getElementById('matchPct').textContent         = matchPctRounded + '%';
+        document.getElementById('matchPerPeriodAmt').textContent = fmt$(matchPerPeriodRounded);
         document.getElementById('matchPctSublabel').textContent = preTaxBasic >= contribTarget
             ? `✅ ${goalLabel} already reached — ${fmt$(preTaxBasic)} contributed YTD`
-            : `Goal: ${fmt$(contribTarget)} · ${fmt$(preTaxBasic)} contributed YTD · ${fmt$(matchStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''}`;
+            : `Exact: ${fmtPct(matchPct)} · Goal: ${fmt$(contribTarget)} · ${fmt$(preTaxBasic)} contributed YTD · ${fmt$(matchStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''}`;
 
         // ── Catch-up % ──
         const catchupRow        = document.getElementById('catchupRow');
@@ -735,16 +886,19 @@
         } else {
             catchupRow.style.display = '';
             catchupPerPeriodRow.style.display = '';
-            const isSuperCatchup      = catchupLimit === 11250;
-            const catchupStillNeeded  = Math.max(0, catchupLimit - rothCatchup);
-            const catchupPerPeriod    = periodsRemaining > 0 ? catchupStillNeeded / periodsRemaining : 0;
-            const catchupPct          = perPeriodGross > 0 ? catchupPerPeriod / perPeriodGross : 0;
+            const isSuperCatchup       = catchupLimit === 11250;
+            const catchupStillNeeded   = Math.max(0, catchupLimit - rothCatchup);
+            const catchupPerPeriod     = periodsRemaining > 0 ? catchupStillNeeded / periodsRemaining : 0;
+            const catchupPct           = perPeriodGross > 0 ? catchupPerPeriod / perPeriodGross : 0;
 
-            document.getElementById('catchupPercent').textContent     = fmtPct(catchupPct);
-            document.getElementById('catchupPerPeriodAmt').textContent = fmt$(catchupPerPeriod);
+            const catchupPctRounded       = Math.ceil(catchupPct * 100);
+            const catchupPerPeriodRounded = perPeriodGross * catchupPctRounded / 100;
+
+            document.getElementById('catchupPercent').textContent     = catchupPctRounded + '%';
+            document.getElementById('catchupPerPeriodAmt').textContent = fmt$(catchupPerPeriodRounded);
             document.getElementById('catchupSublabel').textContent    = rothCatchup >= catchupLimit
                 ? `✅ Catch-up limit already reached — ${fmt$(rothCatchup)} contributed YTD`
-                : `${fmt$(rothCatchup)} contributed YTD · ${fmt$(catchupStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''} · ${isSuperCatchup ? 'SECURE 2.0 ages 60–63' : 'ages 50–59 or 64+'}`;
+                : `Exact: ${fmtPct(catchupPct)} · ${fmt$(rothCatchup)} contributed YTD · ${fmt$(catchupStillNeeded)} still needed over ${periodsRemaining} remaining period${periodsRemaining !== 1 ? 's' : ''} · ${isSuperCatchup ? 'SECURE 2.0 ages 60–63' : 'ages 50–59 or 64+'}`;
         }
 
         // for employer match / tax calc below
@@ -938,6 +1092,77 @@
     const irsData = loadIrsLimits();
     if (!irsData.verified) saveIrsLimits(irsData);
     renderIrsPopover(irsData);
+
+    // ── Print record ──
+    function printRecord() {
+        const salary           = parseFloat(document.getElementById('salary').value)            || 0;
+        const annualBonus      = parseFloat(document.getElementById('annualBonus').value)       || 0;
+        const payPeriods       = parseInt(document.getElementById('payPeriods').value, 10)      || 0;
+        const periodsRemaining = parseInt(document.getElementById('periodsRemaining').value, 10)|| 0;
+        const limit401k        = parseFloat(document.getElementById('limit401k').value)         || 0;
+        const catchupSel       = document.getElementById('catchupType');
+        const catchupLimit     = parseFloat(catchupSel.value) || 0;
+        const catchupText      = catchupLimit === 0 ? 'Not eligible'
+                               : catchupSel.options[catchupSel.selectedIndex].text;
+        const preTaxBasic      = parseFloat(document.getElementById('preTaxBasic').value)  || 0;
+        const rothCatchup      = parseFloat(document.getElementById('rothCatchup').value)  || 0;
+        const matchRate        = parseFloat(document.getElementById('matchRate').value)         || 0;
+        const matchCeiling     = parseFloat(document.getElementById('matchCeiling').value)      || 0;
+        const autoContrib      = parseFloat(document.getElementById('autoContrib').value)       || 0;
+        const goalSel          = document.getElementById('contribGoal');
+        const goalText         = goalSel.options[goalSel.selectedIndex].text;
+        const perPeriodGross   = payPeriods > 0 ? salary / payPeriods : 0;
+
+        // Populate print-only fields
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('psPrintTitle').textContent = `401(k) Contribution Calculator — Summary · ${dateStr}`;
+        document.getElementById('psPrintDate').textContent =
+            'Printed: ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+        document.getElementById('psSalary').textContent           = fmt$(salary);
+        document.getElementById('psBonus').textContent            = annualBonus > 0 ? fmt$(annualBonus) : '—';
+        document.getElementById('psPayPeriods').textContent       = payPeriods;
+        document.getElementById('psPeriodsRemaining').textContent = periodsRemaining;
+        document.getElementById('psPerPeriodGross').textContent   = fmt$(perPeriodGross);
+        document.getElementById('psLimit401k').textContent        = fmt$(limit401k);
+        document.getElementById('psCatchupType').textContent      = catchupText;
+        document.getElementById('psPreTaxBasic').textContent      = fmt$(preTaxBasic);
+        document.getElementById('psRothCatchup').textContent      = fmt$(rothCatchup);
+        document.getElementById('psGoal').textContent             = goalText;
+
+        document.getElementById('psMatchRate').textContent        = matchRate + '%';
+        document.getElementById('psMatchCeiling').textContent     = matchCeiling + '%';
+        document.getElementById('psAutoContrib').textContent      = autoContrib + '%';
+
+        // Copy live employer match results
+        document.getElementById('psMaxMatch').textContent         = document.getElementById('maxMatch').textContent;
+        document.getElementById('psAutoContribAmt').textContent   = document.getElementById('autoContribAmount').textContent;
+        document.getElementById('psTotalEmployer').textContent    = document.getElementById('totalEmployerContrib').textContent;
+
+        // Copy live contribution results (rounded-up % from main display; exact from sublabel)
+        document.getElementById('psMatchPct').textContent         = document.getElementById('matchPct').textContent;
+        document.getElementById('psMatchPerPeriod').textContent   = document.getElementById('matchPerPeriodAmt').textContent;
+
+        // Extract exact % from sublabel ("Exact: 4.23% · ...")
+        const matchSublabel = document.getElementById('matchPctSublabel').textContent;
+        const matchExactMatch = matchSublabel.match(/Exact:\s*([\d.]+%)/);
+        document.getElementById('psMatchPctExact').textContent = matchExactMatch ? matchExactMatch[1] : '—';
+
+        const showCatchup = document.getElementById('catchupRow').style.display !== 'none';
+        document.getElementById('psCatchupRow').style.display           = showCatchup ? '' : 'none';
+        document.getElementById('psCatchupExactRow').style.display      = showCatchup ? '' : 'none';
+        document.getElementById('psCatchupPerPeriodRow').style.display  = showCatchup ? '' : 'none';
+        if (showCatchup) {
+            document.getElementById('psCatchupPct').textContent      = document.getElementById('catchupPercent').textContent;
+            document.getElementById('psCatchupPerPeriod').textContent = document.getElementById('catchupPerPeriodAmt').textContent;
+            const catchupSublabel = document.getElementById('catchupSublabel').textContent;
+            const catchupExactMatch = catchupSublabel.match(/Exact:\s*([\d.]+%)/);
+            document.getElementById('psCatchupPctExact').textContent = catchupExactMatch ? catchupExactMatch[1] : '—';
+        }
+
+        window.print();
+    }
 </script>
 </body>
 </html>
