@@ -765,11 +765,9 @@
 
         <div class="ps-section">CONTRIBUTION PERCENTAGES TO ENTER IN PAYROLL</div>
         <table class="ps-table">
-            <tr><td>Match Contribution % (rounded up)</td><td id="psMatchPct"></td></tr>
-            <tr><td>Match Contribution % (exact)</td><td id="psMatchPctExact"></td></tr>
+            <tr><td id="psMatchPctLabel">Match Contribution %</td><td id="psMatchPct"></td></tr>
             <tr><td>Match Contribution per Pay Period</td><td id="psMatchPerPeriod"></td></tr>
-            <tr id="psCatchupRow"><td>Catch-up Contribution % (rounded up)</td><td id="psCatchupPct"></td></tr>
-            <tr id="psCatchupExactRow"><td>Catch-up Contribution % (exact)</td><td id="psCatchupPctExact"></td></tr>
+            <tr id="psCatchupRow"><td id="psCatchupPctLabel">Catch-up Contribution %</td><td id="psCatchupPct"></td></tr>
             <tr id="psCatchupPerPeriodRow"><td>Catch-up Contribution per Pay Period</td><td id="psCatchupPerPeriod"></td></tr>
         </table>
 
@@ -778,7 +776,6 @@
 
     <div class="info-box">
         <strong>Common Pay Periods:</strong> 26 = bi-weekly &nbsp;·&nbsp; 24 = semi-monthly &nbsp;·&nbsp; 52 = weekly<br>
-        <strong>Note:</strong> The values in <strong style="color:white">CONTRIBUTION PERCENTAGES TO ENTER IN PAYROLL</strong> are the percentages to enter in your Fidelity NetBenefits (or your plan) portal.<br>
 <strong>Disclaimer:</strong> This is a planning tool, not financial or tax advice. Consult a financial advisor or CPA for your specific situation.
     </div>
 
@@ -1140,25 +1137,28 @@
         document.getElementById('psAutoContribAmt').textContent   = document.getElementById('autoContribAmount').textContent;
         document.getElementById('psTotalEmployer').textContent    = document.getElementById('totalEmployerContrib').textContent;
 
-        // Copy live contribution results (rounded-up % from main display; exact from sublabel)
-        document.getElementById('psMatchPct').textContent         = document.getElementById('matchPct').textContent;
-        document.getElementById('psMatchPerPeriod').textContent   = document.getElementById('matchPerPeriodAmt').textContent;
-
-        // Extract exact % from sublabel ("Exact: 4.23% · ...")
+        // Copy live contribution results — label shows exact %, value shows rounded-up whole number
+        const matchRounded = document.getElementById('matchPct').textContent;
         const matchSublabel = document.getElementById('matchPctSublabel').textContent;
         const matchExactMatch = matchSublabel.match(/Exact:\s*([\d.]+%)/);
-        document.getElementById('psMatchPctExact').textContent = matchExactMatch ? matchExactMatch[1] : '—';
+        const matchExact = matchExactMatch ? matchExactMatch[1] : null;
+        document.getElementById('psMatchPctLabel').textContent =
+            matchExact ? `Match Contribution % (${matchExact} rounded up)` : 'Match Contribution %';
+        document.getElementById('psMatchPct').textContent = matchRounded;
+        document.getElementById('psMatchPerPeriod').textContent = document.getElementById('matchPerPeriodAmt').textContent;
 
         const showCatchup = document.getElementById('catchupRow').style.display !== 'none';
-        document.getElementById('psCatchupRow').style.display           = showCatchup ? '' : 'none';
-        document.getElementById('psCatchupExactRow').style.display      = showCatchup ? '' : 'none';
-        document.getElementById('psCatchupPerPeriodRow').style.display  = showCatchup ? '' : 'none';
+        document.getElementById('psCatchupRow').style.display          = showCatchup ? '' : 'none';
+        document.getElementById('psCatchupPerPeriodRow').style.display = showCatchup ? '' : 'none';
         if (showCatchup) {
-            document.getElementById('psCatchupPct').textContent      = document.getElementById('catchupPercent').textContent;
-            document.getElementById('psCatchupPerPeriod').textContent = document.getElementById('catchupPerPeriodAmt').textContent;
+            const catchupRounded = document.getElementById('catchupPercent').textContent;
             const catchupSublabel = document.getElementById('catchupSublabel').textContent;
             const catchupExactMatch = catchupSublabel.match(/Exact:\s*([\d.]+%)/);
-            document.getElementById('psCatchupPctExact').textContent = catchupExactMatch ? catchupExactMatch[1] : '—';
+            const catchupExact = catchupExactMatch ? catchupExactMatch[1] : null;
+            document.getElementById('psCatchupPctLabel').textContent =
+                catchupExact ? `Catch-up Contribution % (${catchupExact} rounded up)` : 'Catch-up Contribution %';
+            document.getElementById('psCatchupPct').textContent      = catchupRounded;
+            document.getElementById('psCatchupPerPeriod').textContent = document.getElementById('catchupPerPeriodAmt').textContent;
         }
 
         window.print();
