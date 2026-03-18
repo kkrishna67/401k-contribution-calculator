@@ -21,6 +21,7 @@ It accounts for contributions already made this year so the percentages stay acc
 - YTD progress tracking for pre-tax basic and Roth catch-up contributions
 - Persistent inputs — all settings saved automatically in your browser (except salary)
 - Links directly to the IRS 401(k) limits page
+- Print a copy for your records so you can tally later
 
 ## Usage
 
@@ -30,7 +31,7 @@ Open `index.html` in any browser. No installation or dependencies required.
 2. Set your **401(k) limits** and **catch-up eligibility**
 3. Enter your **employer match** details
 4. Select your **contribution goal**
-5. Update **YTD contributions** (pre-tax and Roth) and **pay periods remaining** as the year progresses
+5. Update **YTD contributions** and **pay periods remaining** as the year progresses
 
 The contribution percentages update instantly as you type.
 
